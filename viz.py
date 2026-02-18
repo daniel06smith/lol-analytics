@@ -58,7 +58,7 @@ def plot_event_tick_timeline(events, title="Game Timeline (Key Events)"):
     heights_pattern = [0.20, 0.35, 0.50, 0.65, 0.80]
     heights = [heights_pattern[i % len(heights_pattern)] for i in range(len(xs))]
 
-    plt.figure(figsize=(16, 4))
+    plt.figure(figsize=(26, 5))
     ax = plt.gca()
 
     # Baseline
@@ -90,7 +90,7 @@ def _tint_image(img: Image.Image, rgb, strength=0.35):
     overlay = Image.new("RGBA", img.size, (int(r*255), int(g*255), int(b*255), int(strength*255)))
     return Image.alpha_composite(img, overlay)
 
-def plot_icon_timeline_ddragon(events, assets_dir="assets", title="Game Timeline (Icons)", zoom=0.22):
+def plot_icon_timeline_ddragon(events, assets_dir="assets", title="Game Timeline (Icons)", champ_zoom=0.22, kill_zoom=0.22):
     """
     Champions come from Data Dragon (cached).
     Objectives + kill icon come from your local assets folder:
@@ -107,12 +107,12 @@ def plot_icon_timeline_ddragon(events, assets_dir="assets", title="Game Timeline
     xs = [e["t_min"] for e in events]
     xmin, xmax = min(xs), max(xs)
 
-    plt.figure()
+    plt.figure(figsize=(26, 5))
     ax = plt.gca()
     ax.hlines(0, xmin - 0.5, xmax + 0.5)
 
-    def place_icon(img: Image.Image, x, y):
-        oi = OffsetImage(np.asarray(img), zoom=zoom)  # <-- convert PIL -> array
+    def place_icon(img: Image.Image, x, y, z):
+        oi = OffsetImage(np.asarray(img), zoom=z)  # <-- convert PIL -> array
         ab = AnnotationBbox(
             oi,
             (x, y),
@@ -145,13 +145,16 @@ def plot_icon_timeline_ddragon(events, assets_dir="assets", title="Game Timeline
                 v_img = Image.open(v_path).convert("RGBA")
 
                 kill_img = Image.open(f"{assets_dir}/misc/kill.png").convert("RGBA")
+
+                kill_img = kill_img.resize((110, 110), Image.LANCZOS)
+
                 if tint:
                     kill_img = _tint_image(kill_img, tint, strength=0.35)
 
-                dx = 0.18
-                place_icon(k_img, x - dx, y + 0.02)
-                place_icon(kill_img, x,      y + 0.02)
-                place_icon(v_img, x + dx, y + 0.02)
+                dx = 0.5
+                place_icon(k_img,       x - dx, y + 0.02, champ_zoom)
+                place_icon(kill_img,    x,      y + 0.02, kill_zoom)
+                place_icon(v_img,       x + dx, y + 0.02, champ_zoom)
             except Exception:
                 ax.text(x, y + 0.02, f"{killer} > {victim}", rotation=90, fontsize=7, ha="left", va="bottom")
 
@@ -173,7 +176,7 @@ def plot_icon_timeline_ddragon(events, assets_dir="assets", title="Game Timeline
                 try:
                     img = Image.open(icon).convert("RGBA")
                     if tint:
-                        img = _tint_image(img, tint, strength=0.30)
+                        img = _tint_image(img, tint, strength=0.05)
                     place_icon(img, x, y + 0.02)
                 except Exception:
                     ax.text(x, y + 0.02, monster, rotation=90, fontsize=7, ha="left", va="bottom")
